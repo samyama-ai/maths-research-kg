@@ -241,6 +241,27 @@ fine-grained complexity
 query complexity
 arithmetic circuit | algebraic complexity
 error-correcting code | error correcting code; coding theory
+transcendental number | transcendental; algebraically independent; algebraic independence
+polynomial roots | roots of a polynomial; zeros of a polynomial; complex polynomial; critical points of a polynomial
+matrix inequality | positive semidefinite; unitarily invariant norm; singular values; loewner order; hermitian matrices
+self-adjoint operator | self-adjoint; schrödinger operator; unbounded operator; accretive
+nevanlinna theory | nevanlinna; meromorphic function; value distribution
+inner function | inner functions; blaschke product; hardy space
+quasiconvexity | quasiconvex; polyconvex; rank-one convex
+viscosity solution | viscosity solutions
+division ring | division algebra; skew field; free field
+quantum group | canonical basis; crystal basis; quantized enveloping algebra
+point configuration | general position; convex position; halving lines; k-sets; points in the plane
+ball packing | union of balls; intersection of balls
+graph drawing | crossing number; thrackle; drawn in the plane
+graph decomposition | edge-decomposition; tree decomposition; edge-disjoint; t-decomposition; h-decomposition; decomposition into paths; path decomposition
+cycle in a graph | cycle length; cycle of length; girth; even cycle
+pursuit-evasion game | cops and robbers; cop number; pursuit-evasion
+data structure | data structures; binary search tree; search tree; splay tree
+finite automaton | finite automata; regular language; regular expression; star height; syntactic monoid
+cryptographic hash function | random oracle; hash function
+set family | union-closed; family of sets; set system
+bose-einstein condensate | gross-pitaevskii; superfluid
 """
 
 
