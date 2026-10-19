@@ -1,8 +1,8 @@
-# {{KG_NAME}} Knowledge Graph
+# Maths Research Knowledge Graph
 
 **{{N}} nodes. {{M}} edges. {{ONE_LINE_SCOPE}} from {{K}} sources.**
 
-![{{KG_NAME}} demo](demo/{{KG_SLUG}}.gif)
+![Maths Research demo](demo/maths_research.gif)
 
 > Part of the **Samyama** ecosystem — loaded into and queried via the graph engine at [samyama-ai/samyama-graph](https://github.com/samyama-ai/samyama-graph).
 > This repo holds the loader and source-data specifics for the KG.
@@ -32,8 +32,8 @@ A narrated walkthrough on a fast, real subset.
 ```bash
 python -m demo.demo                                                     # run live
 asciinema rec --overwrite --cols 92 --rows 32 --idle-time-limit 2.0 \
-  -c "bash -c 'python -m demo.demo'" demo/{{KG_SLUG}}.cast              # re-record
-agg demo/{{KG_SLUG}}.cast demo/{{KG_SLUG}}.gif                          # convert to gif
+  -c "bash -c 'python -m demo.demo'" demo/maths_research.cast              # re-record
+agg demo/maths_research.cast demo/maths_research.gif                          # convert to gif
 ```
 
 ---
@@ -44,7 +44,7 @@ agg demo/{{KG_SLUG}}.cast demo/{{KG_SLUG}}.gif                          # conver
 **Edge types** -- {{EDGE_TYPES}}
 **Data sources** -- {{SOURCES}}
 
-See [`schema/{{KG_SLUG}}_kg.cypher`](schema/{{KG_SLUG}}_kg.cypher) for the full schema.
+See [`schema/maths_research_kg.cypher`](schema/maths_research_kg.cypher) for the full schema.
 
 ## Quick Start
 
@@ -81,7 +81,7 @@ pyproject.toml
 ### Placeholder reference
 | Placeholder | Meaning |
 |-------------|---------|
-| `{{KG_NAME}}` | Human name, e.g. "Drug Interactions" |
+| `Maths Research` | Human name, e.g. "Drug Interactions" |
 | `{{KG_SLUG}}` | file/id slug, e.g. "druginteractions" |
 | `{{NODE_LABELS}}` / `{{EDGE_TYPES}}` | comma-separated schema |
 | `{{SOURCES}}` | data sources + licenses |
