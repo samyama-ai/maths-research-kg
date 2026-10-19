@@ -82,3 +82,16 @@ def test_formalization_and_confidence():
     assert rules.formalization("formalised in Lean 4") == "mentioned"
     assert rules.formalization("a formalism for lean manufacturing") == "none-mentioned"
     assert rules.confidence("new bound *(frontier — verify)*") == "frontier-verify"
+
+
+def test_concept_matching():
+    from etl import concepts
+    names = {name for name, _ in concepts.table()}
+    assert "elliptic curve" in names and len(names) == len(concepts.table())   # no duplicates
+    pat = concepts.pattern("navier-stokes equations", ["navier-stokes"])
+    assert pat.search(concepts.strip_math("the 3D Navier–Stokes equations"))   # en-dash
+    padic = concepts.pattern("p-adic number", ["p-adic"])
+    assert padic.search(concepts.strip_math("over the $p$-adic integers"))
+    assert not concepts.pattern("knot", []).search("knotted")                  # whole words only
+    assert concepts.pattern("elliptic curve", []).search("Elliptic Curves over Q")  # case, plural
+    assert concepts.concept_id("Calabi-Yau manifold") == "concept:calabi-yau-manifold"

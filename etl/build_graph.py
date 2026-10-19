@@ -12,7 +12,7 @@ import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from etl import rules, taxonomies
+from etl import concepts, rules, taxonomies
 from etl.catalog import bullets, lead_in, paper_id, parse_reference, read_catalog
 from etl.download_data import CATALOG_DIR, check_catalog, read_lock
 
@@ -102,6 +102,9 @@ def build(root: Path = CATALOG_DIR) -> Graph:
         g.node("TaxonomyTerm", f"list:{code}", "catalog", None, scheme="famous-list",
                notation=code, label=label)
 
+    concept_rows = [(concepts.concept_id(name), name, aliases, concepts.pattern(name, aliases))
+                    for name, aliases in concepts.table()]
+    involves: dict[str, dict[str, list[int]]] = defaultdict(dict)   # concept id -> page id -> sections
     matcher, by_title = title_matcher(pages)
     for page in pages:
         rel_path = page.path.relative_to(root).as_posix()
@@ -169,6 +172,11 @@ def build(root: Path = CATALOG_DIR) -> Graph:
         for code, number, evidence in rules.list_memberships(page.id, page.title, s.get(1, "")):
             g.edge("PART_OF_LIST", P, ("TaxonomyTerm", f"list:{code}"), number=number,
                    method="list-matched", evidence=evidence)
+        for sec in concepts.MATCH_SECTIONS:
+            text = concepts.strip_math(s.get(sec, ""))
+            for cid, _, _, pat in concept_rows:
+                if pat.search(text):
+                    involves[cid].setdefault(pid, []).append(sec)
         for sec in LINK_SECTIONS:
             text = s.get(sec, "")
             for m in matcher.finditer(text):
@@ -179,6 +187,18 @@ def build(root: Path = CATALOG_DIR) -> Graph:
                 kind = rules.relation_kind(sentence)
                 g.edge("RELATED_TO", P, ("Problem", other), key=(kind,), kind=kind,
                        method="title-matched", evidence=sentence[:500], section=sec)
+
+    # Concepts: kept when they match at least MIN_PAGES problem pages.
+    topic_of = {p.id: p.topic for p in pages}
+    for cid, name, aliases, _ in concept_rows:
+        hits = involves.get(cid, {})
+        if len(hits) < concepts.MIN_PAGES:
+            continue
+        g.node("Concept", cid, "list-matched", None, name=name, aliases="; ".join(aliases) or None,
+               problem_count=len(hits), topic_count=len({topic_of[h] for h in hits}))
+        for pid, secs in hits.items():
+            g.edge("INVOLVES", ("Problem", pid), ("Concept", cid), method="list-matched",
+                   section=min(secs), sections=",".join(map(str, secs)), in_obstacles=5 in secs)
 
     for label, nodes in g.nodes.items():
         if label != "DataSource":
