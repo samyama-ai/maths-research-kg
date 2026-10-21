@@ -50,6 +50,7 @@ BROADER 51 · FROM_SOURCE 34,072
 MSC2020, arXiv categories and ACM CCS are used as topic-level mappings only; no external records
 are imported.
 
+What the data is, where it comes from and what it is not for: [`DATASET_CARD.md`](DATASET_CARD.md).
 The design is in [`docs/`](docs/) (ontology, taxonomy, coding systems, standards, scope, schema);
 indexes are in [`schema/maths_research_kg.cypher`](schema/maths_research_kg.cypher).
 
