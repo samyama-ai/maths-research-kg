@@ -6,8 +6,8 @@ Research KG. Every taxonomy term is a `TaxonomyTerm` node with `scheme` and `not
 Formats, counts and checks of every coding system (including DOI, arXiv, MSC2020 and the
 numbered famous lists) are in [`coding-systems.md`](coding-systems.md).
 
-Source: `samyama-ai/maths_research` @ `6a4b298`. Counts were measured on that commit and are
-targets to re-check after the build.
+Source: `samyama-ai/maths_research` @ `6a4b298`. Counts in the tables were measured on the pages;
+"Built" figures are the graph. `python -m etl.conformance` checks every value against these lists.
 
 ## Summary
 
@@ -39,11 +39,14 @@ Flat, from `TAXONOMY.md`. Scheme `topic`, notation = folder number.
 
 Second level under each Topic, taken word for word from the **Scope** column of `TAXONOMY.md`
 (e.g. 01 → distribution of primes, Diophantine equations, elliptic curves, modular forms, class
-field theory, arithmetic geometry). About 5–6 per topic, ~55 terms. `BROADER` → its Topic.
+field theory, arithmetic geometry). 4–6 per topic, **50 terms**. `BROADER` → its Topic.
 
-A Problem is `CLASSIFIED_AS` a Subtopic when the subtopic phrase (or a listed synonym) appears in
-its title or section 1–2. `CLASSIFIED_AS.method = keyword-classified`. A problem may match zero
-or several subtopics; zero is allowed and counted.
+A Problem is `CLASSIFIED_AS` a Subtopic when the subtopic phrase, or one of its listed words
+(`SUBTOPIC_TERMS` in `etl/taxonomies.py`, stored on the term as `terms`), appears in its title or
+section 1. `CLASSIFIED_AS.method = keyword-classified`. A problem may match zero or several
+subtopics; zero is allowed and counted. Words that matched most of a topic ("solution", "graph",
+"algebra") are left out. **Built:** 761 of 1,161 problems (66%), 1,165 links; the scope lines
+do not cover every field (e.g. additive combinatorics is not a 07 subtopic).
 
 ### 3. MSC2020 mapping (external, map only)
 
@@ -93,6 +96,16 @@ Schemes `arxiv` and `acm-ccs`; Topic → term via `CLASSIFIED_AS {method: mapped
 A mention is not membership. `PART_OF_LIST` is set only when the page states the problem *is* on
 the list (e.g. "one of the seven Millennium Prize Problems", "Hilbert's tenth problem").
 `PART_OF_LIST.method = list-matched`. Expected members: far fewer than the mention counts.
+
+| List | Rule | Built |
+|---|---|---:|
+| Millennium | the catalog page of one of the 7 problems (fixed id list; Yang–Mills has no page) | 6 |
+| Hilbert | title names "Hilbert's N-th problem", or section 1 names it as the subject ("Hilbert's first problem (1900) asked…", "(Hilbert's 16th problem, first part)") | 6 (1, 10 ×2, 12, 14, 16) |
+| Smale | same rule; no page names a Smale problem as its subject | 0 (kept, empty) |
+| Erdős | title names Erdős as a conjecture or problem (not Erdős–Rényi, Erdős–Ko–Rado, Erdős cardinals), or section 1 says Erdős asked or conjectured it | 32 |
+
+The two Hilbert-10 pages are open extensions of the solved tenth problem (over number fields and
+over the rationals).
 
 ## Controlled code lists
 
@@ -153,12 +166,19 @@ and be tested.
 | `other` | none of the rules matched | 1,462 |
 | `summary` | page has no section 4 bullets; whole section kept as one Result | 507 pages |
 
-`other` is 37%: the rules need a second pass before the build.
+Second pass (built): a bullet no keyword matches but that opens with a bold case name
+("**$p$-solvable groups:** true") or says it was proved/verified is `special_case` with
+`result_type_method = bullet-lead-in`. **Built:** bound 1,556, special_case 1,433,
+computational 416, conditional 236, counterexample 111, other 101 (2.6% of 3,853 bullets),
+summary 513.
 
 #### `RELATED_TO.kind`
 
 `implies`, `implied_by`, `equivalent`, `generalizes`, `special_case`, `related`
 (default when no relation word is in the sentence). `RELATED_TO.method = title-matched`.
+`implies` / `implied_by` are kept only when the sentence says which side the page is on;
+otherwise `related`. **Built:** related 489, generalizes 82, equivalent 28, implies 13,
+implied_by 7, special_case 1.
 
 #### `confidence` — on ResearchDirection and Result
 
@@ -172,4 +192,5 @@ Small, but it answers "which problems have machine-checked progress".
 ## How a value was decided
 
 Every coded value that is our rule rather than the page's own field carries a `*_method`:
-`title-keyword`, `tag-keyword`, `bullet-keyword`, `title-matched`, `list-matched`, `mapped`.
+`title-keyword`, `tag-keyword`, `bullet-keyword`, `bullet-lead-in`, `no-bullets` (on Results), and
+the node and edge `method` values `title-matched`, `list-matched`, `keyword-classified`, `mapped`.

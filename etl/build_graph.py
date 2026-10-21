@@ -41,10 +41,13 @@ class Graph:
             "source_label": src[0], "src": src[1], "target_label": dst[0], "dst": dst[1], **props})
 
 
-def sentence_around(text: str, start: int, end: int) -> str:
+def sentence_around(text: str, start: int, end: int) -> tuple[str, int]:
+    """The sentence holding text[start:end], and where the match starts inside it."""
     left = max(text.rfind(". ", 0, start), text.rfind("\n", 0, start)) + 1
     stops = [i for i in (text.find(". ", end), text.find("\n", end)) if i != -1]
-    return text[left:min(stops) + 1 if stops else len(text)].strip()
+    raw = text[left:min(stops) + 1 if stops else len(text)]
+    lead = len(raw) - len(raw.lstrip())
+    return raw.strip(), start - left - lead
 
 
 def title_matcher(pages) -> tuple[re.Pattern, dict[str, str]]:
@@ -56,7 +59,9 @@ def title_matcher(pages) -> tuple[re.Pattern, dict[str, str]]:
         if len(t) >= 8:
             by_title.setdefault(t.lower(), p.id)
     alts = sorted(by_title, key=len, reverse=True)
-    return re.compile(r"(?<![\w-])(" + "|".join(re.escape(t) for t in alts) + r")(?![\w-])", re.IGNORECASE), by_title
+    edge = r"\w\-–—"   # "Bombieri–Lang Conjecture" must not match "Lang Conjecture"
+    return re.compile(rf"(?<![{edge}])(" + "|".join(re.escape(t) for t in alts) + rf")(?![{edge}])",
+                      re.IGNORECASE), by_title
 
 
 def build(root: Path = CATALOG_DIR) -> Graph:
@@ -78,9 +83,10 @@ def build(root: Path = CATALOG_DIR) -> Graph:
                      number=int(t["number"]), name=t["name"], scope=t["scope"])
         for i, phrase in enumerate(taxonomies.subtopics(t["scope"]), 1):
             sid = g.node("TaxonomyTerm", f"subtopic:{t['number']}.{i}", "catalog", url("TAXONOMY.md"),
-                         scheme="subtopic", notation=f"{t['number']}.{i}", label=phrase)
+                         scheme="subtopic", notation=f"{t['number']}.{i}", label=phrase,
+                         terms=taxonomies.SUBTOPIC_TERMS.get(f"{t['number']}.{i}"))
             g.edge("BROADER", ("TaxonomyTerm", sid), ("Topic", tid))
-            sub_patterns.append((sid, t["slug"], taxonomies.subtopic_pattern(phrase)))
+            sub_patterns.append((sid, t["slug"], taxonomies.subtopic_matcher(f"{t['number']}.{i}", phrase)))
         for code in taxonomies.TOPIC_MSC[t["slug"]]:
             mid = g.node("TaxonomyTerm", f"msc2020:{code}", "mapped", None, scheme="msc2020",
                          notation=code, label=taxonomies.MSC2020[code])
@@ -166,7 +172,7 @@ def build(root: Path = CATALOG_DIR) -> Graph:
                    raw_tag=ref["raw_tag"], role_method="tag-keyword", ordinal=n)
 
         # Subtopics, famous lists, related problems.
-        head = " ".join([page.title, s.get(1, ""), s.get(2, "")])
+        head = concepts.strip_math(" ".join([page.title, s.get(1, "")]))
         for sid, slug, pattern in sub_patterns:
             if slug == page.topic and pattern.search(head):
                 g.edge("CLASSIFIED_AS", P, ("TaxonomyTerm", sid), method="keyword-classified")
@@ -184,8 +190,8 @@ def build(root: Path = CATALOG_DIR) -> Graph:
                 other = by_title[m.group(1).lower()]
                 if other == pid:
                     continue
-                sentence = sentence_around(text, m.start(), m.end())
-                kind = rules.relation_kind(sentence)
+                sentence, pos = sentence_around(text, m.start(), m.end())
+                kind = rules.directed_kind(sentence, pos, page.title)
                 g.edge("RELATED_TO", P, ("Problem", other), key=(kind,), kind=kind,
                        method="title-matched", evidence=sentence[:500], section=sec)
 

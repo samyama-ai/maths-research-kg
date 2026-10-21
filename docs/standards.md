@@ -5,11 +5,14 @@ The external standards the Maths Research KG follows, and how each is checked.
 The nine vocabulary alignments are in [`ontology.md`](ontology.md#alignment-with-other-vocabularies).
 The five taxonomies and ten code lists are in [`taxonomy.md`](taxonomy.md). Every coding system (format, location, counts, checks) is listed in [`coding-systems.md`](coding-systems.md).
 
+Every rule below is a check in `python -m etl.conformance` (`etl/conformance.py`, spec in
+[`schema/conformance.json`](../schema/conformance.json)).
+
 ## Standards and specification groups (6)
 
 | Group | Conformance rule |
 |---|---|
-| PROV-O | Every node has `source`, `provenance`, `method`, `retrieved_at`, `source_date`; page-derived nodes have a commit-pinned `source_url`; `FROM_SOURCE` points at the DataSource. A field and edge mapping, not a full PROV-O serialisation. |
+| PROV-O | Every node has `source`, `provenance`, `method`, `retrieved_at`, `source_date`; page-derived nodes have a commit-pinned `source_url`; every node but the DataSource has exactly one `FROM_SOURCE`. A field and edge mapping, not a full PROV-O serialisation. |
 | SKOS | Every TaxonomyTerm has `scheme` and `notation`; `BROADER` only inside one scheme; Topic scheme stays flat. |
 | RDF/RDFS (declared mappings) | Each vocabulary mapping is declared as a subject–predicate–object triple (`rdfs:subClassOf`, `rdfs:subPropertyOf`, `rdfs:seeAlso`, or `kg:mapsTo`); every mapping names a schema term and a declared vocabulary. No RDF export or OWL reasoning is claimed. |
 | Dublin Core / ISO 15836 | `title`, `date`, `subject` correspondences declared and checked. |

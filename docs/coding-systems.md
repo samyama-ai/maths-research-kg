@@ -72,7 +72,8 @@ number, and most "Erdős" hits are names of theorems (Erdős–Ko–Rado, Erdős
 | `formalization` | Problem | `mentioned`, `none-mentioned` | keyword |
 
 Supporting codes on every node: `provenance` (2 values), `source` (2), `method` (6),
-`*_method` (6) and `Paper.parse_status` (3). Node id patterns are in
+`*_method` (5: `title-keyword`, `tag-keyword`, `bullet-keyword`, `bullet-lead-in`, `no-bullets`)
+and `Paper.parse_status` (3). Node id patterns are in
 [`standards.md`](standards.md#identifiers).
 
 ## E. Evaluated, not used in v1
@@ -90,5 +91,11 @@ Supporting codes on every node: `provenance` (2 values), `source` (2), `method` 
 
 ## Validation
 
-The build will check, per coding system: format (regex above), allowed values (lists C and D),
-and counts against this page. A value that fails is reported, not dropped silently.
+`python -m etl.conformance` checks, per coding system: format (regex above), allowed values
+(lists C and D, read from [`schema/conformance.json`](../schema/conformance.json), which must agree
+with table D), and that no DOI is missing from its own citation. A value that fails is reported,
+not dropped silently.
+
+Built: 3,161 distinct papers with a DOI (3,998 reference lines), 224 with an arXiv id; every
+DOI, arXiv id, date and SHA passes its format check. Paper years ignore numbers inside URLs,
+DOIs, arXiv ids and page ranges ("1492–1505").

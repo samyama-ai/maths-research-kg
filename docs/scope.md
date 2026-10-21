@@ -5,7 +5,7 @@
 **Where are the frontiers of mathematics, what has been proved toward each one, what blocks it,
 and how are the problems connected across fields?**
 
-- **Data:** `samyama-ai/maths_research`, commit `6a4b298` (2026-10-19), 1,161 problem pages in 10 topics.
+- **Data:** `samyama-ai/maths_research`, commit `6a4b298` (committed 2026-09-25, fetched 2026-10-19), 1,161 problem pages in 10 topics.
 - **Status counts:** open 577, partially-solved 333, solved-recently 229, empirically-supported 22.
 - **No old graph.** Unlike dbms-research-kg there is no earlier snapshot, so the marks below say
   whether the **catalog** can answer the question, measured on the pages on 2026-10-19.
@@ -18,6 +18,9 @@ and how are the problems connected across fields?**
 | **[no]** | The catalog does not hold it. Kept as a "refuse" question (group J) or for v2. |
 
 Questions 1–44 are marked; group J (45–48) are questions the graph must refuse.
+
+All 48 are run on the engine by `python -m benchmarks.scope_questions`; the answers, and the check
+each one passes, are in [`benchmarks/scope_results.md`](../benchmarks/scope_results.md).
 
 ## A. Problems and topics
 
