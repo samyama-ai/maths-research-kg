@@ -42,10 +42,14 @@ any mathematical claim. The graph records what the catalog *says*; every page is
 |---|---|---|
 | `id` | every node | see [Identifiers](standards.md#identifiers) |
 | `provenance` | every node | `catalog-synthesized` (read from a page), `schema-vocabulary` (a taxonomy code) |
-| `source` | every node and edge | `maths_research`, or `project_schema` for a taxonomy code |
+| `source` | every node | `maths_research`, or `project_schema` for a taxonomy code |
 | `method` | every node and derived edge | `parsed`, `title-matched`, `keyword-classified`, `list-matched`, `mapped`, `catalog` |
-| `source_url` | every node and edge | the catalog file at the pinned commit |
+| `source_url` | every page-derived node | the catalog file at the pinned commit (Concepts and mapped codes come from no single page and have none) |
 | `retrieved_at`, `source_date` | every node | from the source lock record, `YYYY-MM-DD` |
+
+Edges carry no provenance fields of their own: an edge comes from the page of its start node.
+Derived edges (`RELATED_TO`, `INVOLVES`, `CLASSIFIED_AS`, `PART_OF_LIST`) carry `method`; `CITES`
+carries `role_method`.
 
 Where a value is our rule over the page's words rather than the words themselves, `method` (and,
 for coded values, a `*_method` property) says which rule.
@@ -65,7 +69,7 @@ for coded values, a `*_method` property) says which rule.
 | Class | Definition | Comes from | Expected count |
 |---|---|---|---:|
 | **Result** | One proved, verified or conditional partial result toward a problem. Has `result_type`. | section 4 bullets | ~4,440 (3,931 bullets on 654 pages, plus one `summary` Result for each of the other 507 pages) |
-| **Concept** | A named mathematical object or theory (zeta function, elliptic curve, forcing). Shared across problems. | section 2, matched against a curated concept list | open decision (443 bold terms recur on ≥2 pages before cleaning) |
+| **Concept** | A named mathematical object or theory (zeta function, elliptic curve, forcing). Shared across problems. | sections 1, 2 and 5, matched against the curated list in `etl/concepts.py` | 243 (kept when on ≥ 3 pages) |
 
 ### What blocks it
 
@@ -120,11 +124,13 @@ for coded values, a `*_method` property) says which rule.
 Measured evidence for `RELATED_TO`: 756 title mentions on 468 pages, 215 across topics. Pages
 containing the relation words: "implies" 572, "equivalent to" 327, "generaliz…" 89, "special case
 of" 22. A relation word only sets `kind` when it is in the same sentence as the matched title;
-otherwise `kind: related`.
+otherwise `kind: related`. `implies` and `implied_by` also need the sentence to say which side
+the page itself is on ("this conjecture implies X" vs "X implies this conjecture"); when it does
+not, the kind falls back to `related`.
 
 ## Rules
 
-1. Every node has an `id`, `provenance`, `source`, `method` and a `source_url` at the pinned commit.
+1. Every node has an `id`, `provenance`, `source` and `method`; every page-derived node has a `source_url` at the pinned commit.
 2. Every Problem has exactly one `IN_TOPIC`, one `HAS_GAP`, one `HAS_EXAMPLE`, and a `status` from the four catalog values.
 3. Every coded property takes a value from [`taxonomy.md`](taxonomy.md); unknown values fail the build.
 4. No DOI, arXiv id or MSC code is invented; a Paper without a DOI keeps its raw citation.
@@ -145,6 +151,9 @@ otherwise `kind: related`.
 | 7 | CiTO | citation roles | `CITES {role: foundational}` ~ `cito:citesAsAuthority`; `survey` ~ `cito:citesAsRecommendedReading` |
 | 8 | OntoMathPRO | maths classes | Problem ~ OntoMathPRO "Problem", Concept ~ "Mathematical object", Result ~ "Statement" (class IRIs to be looked up when the mappings are declared) |
 | 9 | OMDoc | statement kinds | `kind: conjecture` ~ `omdoc:conjecture`; `kind: theorem` ~ `omdoc:theorem`; WorkedExample ~ `omdoc:example` |
+
+The mappings are declared as 38 subject–predicate–object triples in
+[`schema/conformance.json`](../schema/conformance.json) and checked by `python -m etl.conformance`.
 
 Wikidata is used as a reading reference only (e.g. Q1201, Riemann hypothesis) and is not counted.
 

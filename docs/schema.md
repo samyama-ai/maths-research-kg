@@ -1,12 +1,13 @@
-# Maths Research KG — schema v0.1
+# Maths Research KG — schema v1.0
 
 The physical model: every node label and edge type, with its properties and expected counts.
 The meaning of each class is in [`ontology.md`](ontology.md); allowed values of coded properties
 are in [`taxonomy.md`](taxonomy.md); id patterns and standards in [`standards.md`](standards.md); code formats in [`coding-systems.md`](coding-systems.md);
 the questions this schema must answer are in [`scope.md`](scope.md).
 
-Source: `samyama-ai/maths_research` @ `6a4b298`. Counts are measured on the pages and are
-**targets**, to be re-checked after the first build.
+Source: `samyama-ai/maths_research` @ `6a4b298`. "Built" counts are the graph made by
+`python -m etl.build_graph`; `python -m etl.conformance` checks it against this page and
+[`schema/conformance.json`](../schema/conformance.json).
 
 ## Summary
 
@@ -14,8 +15,8 @@ Source: `samyama-ai/maths_research` @ `6a4b298`. Counts are measured on the page
 |---|---:|
 | Node labels | 12 |
 | Edge types | 14 |
-| Expected nodes | ~36,300 (Paper counted before de-dup; Concept not counted) |
-| Expected edges | ~37,100, plus one `FROM_SOURCE` per node (~73,000 in all) |
+| Built nodes | 34,073 |
+| Built edges | 78,162 (44,090 plus one `FROM_SOURCE` per node) |
 
 ## Diagram
 
@@ -61,7 +62,7 @@ On every node (from [`ontology.md`](ontology.md#properties-every-thing-has)):
 | `provenance` | `catalog-synthesized` \| `schema-vocabulary` | yes |
 | `source` | `maths_research` \| `project_schema` | yes |
 | `method` | code (`parsed`, `title-matched`, `keyword-classified`, `list-matched`, `mapped`, `catalog`) | yes |
-| `source_url` | URL at the pinned commit | yes (except TaxonomyTerm) |
+| `source_url` | URL at the pinned commit | page-derived nodes (not Concept, not mapped TaxonomyTerm) |
 | `retrieved_at`, `source_date` | `YYYY-MM-DD` | yes |
 
 Section-derived nodes (Result, Obstacle, Gap, ResearchDirection, FutureDirection, WorkedExample)
@@ -70,46 +71,46 @@ LaTeX kept as written).
 
 ## Node labels
 
-| Label | Key properties | Expected | Answers |
+| Label | Key properties | Built | Answers |
 |---|---|---:|---|
 | **Topic** | `id`, `slug`, `number`, `name`, `scope` | 10 | Q1–3 |
 | **Problem** | `id`, `slug`, `title`, `status`, `kind`, `kind_method`, `catalog_provenance`, `first_added`, `last_reviewed`, `last_substantive_update`, `stale_since`, `statement` (section 1), `foundations` (section 2), `history` (section 3), `formalization`, `frontier_flags` (int) | 1,161 | Q4, Q6, Q16 |
-| **DataSource** | `id`, `name`, `url`, `version` (commit SHA), `licence`, `retrieved_at` | 1 | Q40 |
-| **Result** | + `result_type`, `result_type_method`, `confidence` | ~4,440 | Q11–15 |
-| **Concept** | `id`, `name`, `aliases` (list) | open (list to curate; 443 raw candidates) | Q7, Q19, Q29, Q44 |
-| **Obstacle** | section-node properties | ~4,700 | Q17–19 |
+| **DataSource** | `id`, `name`, `source_url` (repo), `version` (commit SHA), `licence`, `retrieved_at` | 1 | Q40 |
+| **Result** | + `result_type`, `result_type_method`, `confidence` | 4,366 | Q11–15 |
+| **Concept** | `id`, `name`, `aliases` (`; `-separated), `problem_count`, `topic_count` | 243 | Q7, Q19, Q29, Q44 |
+| **Obstacle** | section-node properties | 4,924 | Q17–19 |
 | **Gap** | section-node properties | 1,161 | Q9, Q41 |
-| **ResearchDirection** | + `heading` (bold lead-in, normalised), `confidence` | ~5,000 | Q20–21, Q23 |
-| **FutureDirection** | + `heading` | ~4,030 | Q22 |
+| **ResearchDirection** | + `heading` (bold lead-in), `confidence` | 5,074 | Q20–21, Q23 |
+| **FutureDirection** | + `heading` | 4,323 | Q22 |
 | **WorkedExample** | section-node properties | 1,161 | Q8 |
-| **Paper** | `id`, `raw_citation`, `title`, `authors` (string), `year` (int), `venue`, `doi`, `arxiv_id`, `parse_status` (`parsed` \| `partial` \| `raw`) | < 14,550 after de-dup | Q30–34 |
-| **TaxonomyTerm** | `id`, `scheme` (`subtopic`, `msc2020`, `arxiv`, `acm-ccs`, `famous-list`), `notation`, `label` | ~120 (≈55 subtopic, ≈29 MSC, ≈25 arXiv, 1 ACM, 4 lists) | Q5, Q35–39 |
+| **Paper** | `id`, `raw_citation`, `title`, `authors` (string), `year` (int), `venue`, `doi`, `arxiv_id`, `parse_status` (`parsed` \| `partial` \| `raw`) | 11,539 | Q30–34 |
+| **TaxonomyTerm** | `id`, `scheme` (`subtopic`, `msc2020`, `arxiv`, `acm-ccs`, `famous-list`), `notation`, `label`, `terms` (subtopics) | 110 (50 subtopic, 30 MSC, 25 arXiv, 1 ACM, 4 lists) | Q5, Q35–39 |
 
 Notes:
 
 - `Problem.status` and the dates are read from frontmatter. Dates stay `YYYY-MM` as in the catalog.
 - Sections 1–3 are long prose, kept as text on Problem, not split into nodes.
 - `Paper` is merged by `doi` when present, else by normalised title + year. The raw line is always kept.
-- `Concept` stays empty in the first build if the list is not ready; the questions that need it stay [partly].
+- `Concept` is a curated list of 246 names in `etl/concepts.py`; 243 match at least 3 pages and are kept.
 
 ## Edge types
 
-| Edge | From → To | Properties | Expected | Answers |
+| Edge | From → To | Properties | Built | Answers |
 |---|---|---|---:|---|
 | `IN_TOPIC` | Problem → Topic | — | 1,161 | Q1–3 |
-| `HAS_RESULT` | Problem → Result | — | ~4,440 | Q11 |
-| `HAS_OBSTACLE` | Problem → Obstacle | — | ~4,700 | Q17 |
+| `HAS_RESULT` | Problem → Result | — | 4,366 | Q11 |
+| `HAS_OBSTACLE` | Problem → Obstacle | — | 4,924 | Q17 |
 | `HAS_GAP` | Problem → Gap | — | 1,161 | Q9 |
-| `HAS_RESEARCH` | Problem → ResearchDirection | — | ~5,000 | Q20 |
-| `HAS_FUTURE` | Problem → FutureDirection | — | ~4,030 | Q22 |
+| `HAS_RESEARCH` | Problem → ResearchDirection | — | 5,074 | Q20 |
+| `HAS_FUTURE` | Problem → FutureDirection | — | 4,323 | Q22 |
 | `HAS_EXAMPLE` | Problem → WorkedExample | — | 1,161 | Q8 |
 | `CITES` | Problem → Paper | `role`, `raw_tag`, `role_method`, `ordinal` | 14,550 | Q10, Q30–34 |
-| `INVOLVES` | Problem → Concept | `method`, `section` | open | Q7, Q29 |
-| `RELATED_TO` | Problem → Problem | `kind`, `method`, `evidence` (the sentence), `section` | ~750 | Q24–28, Q42 |
-| `CLASSIFIED_AS` | Topic or Problem → TaxonomyTerm | `method` (`mapped` \| `keyword-classified`) | ~70 topic-level + subtopic links | Q5, Q35–36 |
-| `PART_OF_LIST` | Problem → TaxonomyTerm (`famous-list`) | `number` (Hilbert 1–23, Smale 1–18), `method`, `evidence` | small (< 60) | Q37–39 |
-| `BROADER` | TaxonomyTerm → TaxonomyTerm, or TaxonomyTerm → Topic (subtopics) | — | ~60 | Q5 |
-| `FROM_SOURCE` | every node → DataSource | — | one per node | Q40 |
+| `INVOLVES` | Problem → Concept | `method`, `section`, `sections`, `in_obstacles` | 5,435 | Q7, Q19, Q29 |
+| `RELATED_TO` | Problem → Problem | `kind`, `method`, `evidence` (the sentence), `section` | 620 | Q24–28, Q42 |
+| `CLASSIFIED_AS` | Topic or Problem → TaxonomyTerm | `method` (`mapped` \| `keyword-classified`) | 1,220 (55 topic-level, 1,165 subtopic) | Q5, Q35–36 |
+| `PART_OF_LIST` | Problem → TaxonomyTerm (`famous-list`) | `number` (Hilbert 1–23, Smale 1–18), `method`, `evidence` | 44 | Q37–39 |
+| `BROADER` | TaxonomyTerm → TaxonomyTerm, or TaxonomyTerm → Topic (subtopics) | — | 51 | Q5 |
+| `FROM_SOURCE` | every node → DataSource | — | 34,072 | Q40 |
 
 Direction rules:
 
@@ -135,8 +136,9 @@ CREATE INDEX FOR (n:Paper) ON (n.doi);
 CREATE INDEX FOR (n:TaxonomyTerm) ON (n.scheme, n.notation);
 ```
 
-The exact syntax will be checked against the Samyama engine (as in dbms-research-kg's
-`engine-notes.md`) when `schema/maths_research_kg.cypher` is written.
+Samyama 1.11.0 has no constraints and takes `CREATE INDEX ON :Label(prop)`; the indexes it
+actually runs are in [`schema/maths_research_kg.cypher`](../schema/maths_research_kg.cypher). Engine
+quirks found while testing are in [`engine-notes.md`](engine-notes.md).
 
 ## Example queries
 
@@ -168,10 +170,10 @@ RETURN p.title, count(r) AS checks ORDER BY checks DESC
 | `samyama-ai/maths_research` @ `6a4b298` | **none stated (open question)** | every node and edge except taxonomy codes |
 | MSC2020, arXiv categories, ACM CCS 2012 | see [`standards.md`](standards.md#licences) | TaxonomyTerm codes and labels only (mapping) |
 
-## Open decisions for v0.2
+## Decisions made in v1.0
 
-1. Concept list: who curates it, and how big (start from the 443 recurring bold terms)?
-2. `result_type`: second rule pass to bring `other` below ~15%.
-3. Should `RELATED_TO` also be made from section 3 "history" mentions, or only from sections 1, 2, 4–8?
-4. Per-problem MSC2020 codes (v2).
-5. Person nodes (v2).
+1. Concept list: curated in `etl/concepts.py` (246 names, 243 kept), matched in sections 1, 2 and 5.
+2. `result_type`: second pass by bold lead-in; `other` is 2.6%.
+3. `RELATED_TO` is made from sections 1–8 (history included).
+
+Still open (v2): per-problem MSC2020 codes, Person nodes.

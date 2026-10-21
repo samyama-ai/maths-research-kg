@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 
 STATUS = ("open", "partially-solved", "solved-recently", "empirically-supported")
 
@@ -102,6 +103,45 @@ def relation_kind(sentence: str) -> str:
     return first_match(sentence, RELATION_RULES, "related")
 
 
+IMPLIES_RE = re.compile(r"\bimpl(y|ies|ied|ying)\b", re.IGNORECASE)
+IMPLIED_BY_RE = re.compile(r"implied by|follows from|consequence of|would follow", re.IGNORECASE)
+SELF_RE = re.compile(r"\b(it|this|the) (conjecture|hypothesis|problem|statement|question|theorem)\b|^\W*it\b",
+                     re.IGNORECASE)
+NAME_STOP_RE = re.compile(r"\b(conjecture|hypothesis|problem|program|programme|theorem|lemma|question|the|on|of)\b.*",
+                          re.IGNORECASE)
+
+
+def fold(text: str) -> str:
+    """Lower case, no accents, en/em dashes as hyphens: "Lindelöf" == "Lindelof"."""
+    text = unicodedata.normalize("NFKD", text.replace("–", "-").replace("—", "-"))
+    return "".join(c for c in text if not unicodedata.combining(c)).lower()
+
+
+def names_self(text: str, own_title: str) -> bool:
+    """Does `text` name the page itself: its title, its short name ("Vandiver") or "the conjecture"?"""
+    short = NAME_STOP_RE.sub("", own_title).strip(" '’s-")
+    low = fold(text)
+    return (fold(own_title) in low or (len(short) >= 4 and fold(short) in low)
+            or bool(SELF_RE.search(text)))
+
+
+def directed_kind(sentence: str, pos: int, own_title: str) -> str:
+    """RELATED_TO.kind with its direction: the edge goes from this page to the problem named at
+    `pos`. "This conjecture implies X" -> implies; "X implies this conjecture" -> implied_by.
+    When the sentence does not say which side this page is on, the kind is `related`."""
+    kind = relation_kind(sentence)
+    if kind not in ("implies", "implied_by"):
+        return kind
+    verb = (IMPLIES_RE if kind == "implies" else IMPLIED_BY_RE).search(sentence)
+    other_after = pos >= verb.end()
+    self_before, self_after = names_self(sentence[:verb.start()], own_title), names_self(sentence[verb.end():], own_title)
+    if other_after and self_before:
+        return kind
+    if not other_after and self_after:
+        return "implied_by" if kind == "implies" else "implies"
+    return "related"
+
+
 def confidence(text: str) -> str:
     return "frontier-verify" if FRONTIER in text else "stated"
 
@@ -119,16 +159,42 @@ def numbered_problem(text: str, who: str, limit: int) -> int | None:
     return None
 
 
+# The page's own statement names the list entry as its subject: "Hilbert's first problem (1900)
+# asked ...", "(Hilbert's 16th problem, first part)". A passing mention ("an instance of
+# Hilbert's 12th problem") is not membership.
+SUBJECT_RE = r"(?:\s*\(\d{{4}}\))?\s*(?:asked|asks|,\s*(?:first|second) part)"
+ERDOS_TITLE_RE = re.compile(r"erd[őo]s", re.IGNORECASE)
+ERDOS_NOT_RE = re.compile(r"r[ée]nyi|cardinal|ko.rado", re.IGNORECASE)
+ERDOS_POSED_RE = re.compile(r"erd[őo]s[^.]{0,40}\b(asked|conjectured|posed|offered)\b", re.IGNORECASE)
+
+
+def stated_member(statement: str, who: str, limit: int) -> tuple[int, str] | None:
+    """(number, sentence) when section 1 names "<who>'s N-th problem" as the page's subject."""
+    for m in re.finditer(NUMBERED_RE.format(who=who), statement, re.IGNORECASE):
+        if re.match(SUBJECT_RE.format(), statement[m.end():]):
+            n = int(m.group(1)) if m.group(1) else NUMBER_WORDS.get(m.group(2).lower())
+            if n and 1 <= n <= limit:
+                left = max(statement.rfind(". ", 0, m.start()) + 2, statement.rfind("\n", 0, m.start()) + 1)
+                right = statement.find(". ", m.end())
+                return n, statement[left:right + 1 if right != -1 else None].strip()
+    return None
+
+
 def list_memberships(page_id: str, title: str, statement: str) -> list[tuple[str, int | None, str]]:
     """(list code, number, evidence) for each famous list this page IS on (not merely mentions)."""
     out = []
     if page_id in MILLENNIUM:
         out.append(("millennium", None, f"catalog page for the Millennium problem {MILLENNIUM[page_id]}"))
-    head = title + " " + statement[:300]
     for who, code, limit in (("Hilbert", "hilbert", 23), ("Smale", "smale", 18)):
-        n = numbered_problem(title, who, limit) or numbered_problem(statement[:300], who, limit)
+        n, evidence = numbered_problem(title, who, limit), title
+        if not n and (hit := stated_member(statement, who, limit)):
+            n, evidence = hit
         if n:
-            out.append((code, n, head[:200]))
-    if re.search(r"erd[őo]s", title, re.IGNORECASE):
+            out.append((code, n, evidence[:200]))
+    # Erdős problems: posed by Erdős (named for him as a conjecture or problem, or the statement
+    # says he asked it), not objects named after him (Erdős–Rényi graphs, Erdős cardinals).
+    if ERDOS_TITLE_RE.search(title) and not ERDOS_NOT_RE.search(title):
         out.append(("erdos", None, title))
+    elif (m := ERDOS_POSED_RE.search(statement[:600])):
+        out.append(("erdos", None, m.group(0)))
     return out

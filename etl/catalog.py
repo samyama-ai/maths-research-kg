@@ -12,7 +12,9 @@ LEAD_RE = re.compile(r"^\*\*([^*]{2,120}?)\*\*[:.]?")
 DOI_RE = re.compile(r"\b10\.\d{4,9}/[^\s)>\]]+")
 ARXIV_NEW_RE = re.compile(r"arXiv:\s?(\d{4}\.\d{4,5})(v\d+)?", re.IGNORECASE)
 ARXIV_OLD_RE = re.compile(r"arXiv:\s?([a-z-]+(?:\.[A-Z]{2})?/\d{7})", re.IGNORECASE)
-YEAR_RE = re.compile(r"\b(1[5-9]\d\d|20[0-3]\d)\b")
+YEAR_RE = re.compile(r"\b(1[6-9]\d\d|20[0-3]\d)\b")
+# Numbers that look like years but are not: URLs, DOIs, arXiv ids, page ranges, "Lecture Notes 1554".
+NOT_YEAR_RE = re.compile(r"https?://\S+|\b10\.\d{4,9}/\S+|arXiv:\s?\S+|\b\d+\s?[–-]\s?\d+|(?:Notes|Vol\.?|Volume) in \w+ \d+|(?:Notes|Vol\.?|Volume)\s+\d+", re.IGNORECASE)
 TAG_RE = re.compile(r"^- \*\*\[([^\]]+)\]\*\*\s*")
 TITLE_RE = re.compile(r"(?<!\*)\*([^*]{3,300}?)\*(?!\*)")
 
@@ -104,7 +106,7 @@ def parse_reference(line: str) -> dict:
     authors = rest[:title_m.start()].strip().rstrip(".") if title_m else None
     after = rest[title_m.end():] if title_m else rest
     venue = re.split(r"\(|https?://", after)[0].strip(" .,") if title_m else None
-    years = YEAR_RE.findall(after if title_m else rest)
+    years = YEAR_RE.findall(NOT_YEAR_RE.sub(" ", after if title_m else rest))
     year = int(years[0]) if years else None
     status = "parsed" if title and year else "partial" if title else "raw"
     return {"raw_tag": tag, "raw_citation": raw, "authors": authors or None, "title": title,
