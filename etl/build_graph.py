@@ -128,8 +128,9 @@ def build(root: Path = CATALOG_DIR) -> Graph:
         items = bullets(s.get(4, ""))
         if items:
             for n, item in enumerate(items, 1):
+                rtype, rmethod = rules.result_type_with_method(item)
                 rid = g.node("Result", f"{pid}#s4-{n}", "parsed", u, section=4, ordinal=n, text=item,
-                             result_type=rules.result_type(item), result_type_method="bullet-keyword",
+                             result_type=rtype, result_type_method=rmethod,
                              confidence=rules.confidence(item))
                 g.edge("HAS_RESULT", P, ("Result", rid))
         elif s.get(4):

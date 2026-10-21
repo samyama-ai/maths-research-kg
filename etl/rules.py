@@ -74,8 +74,24 @@ def role(raw_tag: str | None) -> str:
     return "untagged" if raw_tag is None else first_match(raw_tag, ROLE_RULES, "other")
 
 
+CASE_LEAD_RE = re.compile(r"^\*\*[^*]{2,160}?\*\*")
+CASE_VERB_RE = re.compile(r"\b(proved|proven|showed|shown|established|verified|confirmed|holds|is true|true for)\b",
+                          re.IGNORECASE)
+
+
 def result_type(text: str) -> str:
-    return first_match(text, RESULT_RULES, "other")
+    return result_type_with_method(text)[0]
+
+
+def result_type_with_method(text: str) -> tuple[str, str]:
+    """Keyword rules first; a section-4 bullet that matches none but opens with a bold case name
+    ("**p-solvable groups:** true") or states a proof is a special case, the section's own heading."""
+    value = first_match(text, RESULT_RULES, "other")
+    if value != "other":
+        return value, "bullet-keyword"
+    if CASE_LEAD_RE.match(text) or CASE_VERB_RE.search(text):
+        return "special_case", "bullet-lead-in"
+    return "other", "bullet-keyword"
 
 
 def problem_kind(title: str) -> str:

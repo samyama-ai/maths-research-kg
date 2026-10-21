@@ -95,3 +95,11 @@ def test_concept_matching():
     assert not concepts.pattern("knot", []).search("knotted")                  # whole words only
     assert concepts.pattern("elliptic curve", []).search("Elliptic Curves over Q")  # case, plural
     assert concepts.concept_id("Calabi-Yau manifold") == "concept:calabi-yau-manifold"
+
+
+def test_result_type_falls_back_to_named_case():
+    assert rules.result_type_with_method("**$p$-solvable groups:** true, by Fong reduction.") == \
+        ("special_case", "bullet-lead-in")
+    assert rules.result_type_with_method("Proven by Weil in the 1940s.") == ("special_case", "bullet-lead-in")
+    assert rules.result_type_with_method("WASEP with small asymmetry (Bertini 1997).") == ("other", "bullet-keyword")
+    assert rules.result_type_with_method("Upper bound O(n log n)") == ("bound", "bullet-keyword")
