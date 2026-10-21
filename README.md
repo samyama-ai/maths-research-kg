@@ -7,6 +7,10 @@
 
 <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License"></a>
 
+![Maths Research KG demo](demo/maths-research-kg.gif)
+
+*Ten questions on the live graph, each tagged with what its answer rests on; see [`demo/`](demo/).*
+
 ---
 
 We loaded the [`samyama-ai/maths_research`](https://github.com/samyama-ai/maths_research) catalog
@@ -60,6 +64,7 @@ python -m etl.build_graph            # parse it into build/graph.json (~25 s)
 python -m etl.engine_load --url http://localhost:8097 --fresh   # load into Samyama (~80 s)
 python -m etl.conformance            # check the graph against docs/ (ontology, taxonomies, codes, standards)
 python -m benchmarks.scope_questions # answer all 48 scope questions on the engine -> benchmarks/scope_results.md
+python -m demo.demo                  # the narrated ten-question demo (demo/record.sh makes the GIF)
 pytest                               # run tests
 ```
 
@@ -71,6 +76,7 @@ etl/          # download_data, catalog (parser), rules, taxonomies, concepts, bu
 schema/       # cypher indexes, conformance.json (declared labels, relations, code lists, vocabulary mappings)
 mcp_server/   # MCP server exposing the KG
 benchmarks/   # scope questions run on the engine
+demo/         # the ten-question demo, its queries and the GIF
 docs/         # design: ontology, taxonomy, coding systems, standards, scope, schema
 tests/        # pytest
 pyproject.toml
